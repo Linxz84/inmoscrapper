@@ -22,6 +22,11 @@ logger = logging.getLogger(__name__)
 FORMATOS_DISPONIBLES = ["CSV", "JSON", "Excel"]
 PAGINA_TAMANIO = 20
 
+# Estado de conectividad de los portales (se detecta al intentar buscar).
+# Por defecto se asume desconocido hasta que el usuario haga una búsqueda real.
+if "portal_estado" not in st.session_state:
+    st.session_state["portal_estado"] = {p: "desconocido" for p in PORTALES_DISPONIBLES}
+
 st.set_page_config(
     page_title="Buscador de Inmuebles CABA",
     page_icon="🏠",
@@ -50,22 +55,74 @@ portales_cfg = config.get("portales", {}) or {}
 busqueda_cfg = config.get("busqueda", {}) or {}
 
 # ---------------------------------------------------------------------------
-# Modo demo (banner rojo cuando está activo)
+# Banner informativo sobre los portales reales (bloqueo externo)
 # ---------------------------------------------------------------------------
 
-modo_demo = st.checkbox("Modo demo (sin internet — datos sintéticos fijos)", value=True)
-if modo_demo:
-    st.markdown(
-        '<div style="background-color:#c0392b;color:#ffffff;padding:12px;border-radius:6px;">'
-        '<strong>⚠️ MODO DEMO ACTIVADO</strong> — Se usa el dataset sintético fijo '
-        '(7 propiedades). No se realiza ninguna petición a internet.</div>',
-        unsafe_allow_html=True,
+st.markdown(
+    '<div style="background-color:#c0392b;color:#ffffff;padding:14px;border-radius:8px;margin-bottom:16px;">'
+    '<strong>⚠️ PORTAL INMOBILIARIOS BLOQUEADOS EXTERNAMENTE</strong><br>'
+    'ZonaProp devuelve <code>403</code> (Cloudflare), Argenprop devuelve '
+    '<code>405</code> y MercadoLibre no expone los selectores especificados. '
+    'Esto es un bloqueo de los portales, no un error de la aplicación. '
+    'Usá el <strong>modo demo</strong> para probar el pipeline completo con datos '
+    'sintéticos fijos.</div>',
+    unsafe_allow_html=True,
+)
+
+# ---------------------------------------------------------------------------
+# Modo demo (vía principal recomendada)
+# ---------------------------------------------------------------------------
+
+st.subheader("Modo de operación")
+
+col_demo, col_real = st.columns(2)
+
+with col_demo:
+    st.info(
+        "🧪 **Modo demo** — Datos sintéticos fijos, sin internet. "
+        "Prueba todo el pipeline: 7 propiedades (2 válidas, 1 excepción por escalera, "
+        "1 <50 m², 1 >USD 120.000, 1 a estrenar, 1 de pozo)."
     )
+    modo_demo = st.checkbox("Activar modo demo", value=True, key="modo_demo_check")
+
+with col_real:
+    st.warning(
+        "🌐 **Modo real** — Se conecta a ZonaProp, MercadoLibre y Argenprop. "
+        "Es probable que falle por bloqueos externos (403/405)."
+    )
+
+# ---------------------------------------------------------------------------
+# Estado de los portales (se actualiza al buscar en modo real)
+# ---------------------------------------------------------------------------
+
+st.markdown("#### Estado de los portales")
+
+cols_estado = st.columns(len(PORTALES_DISPONIBLES))
+estado_actual = st.session_state.get("portal_estado", {})
+for i, portal in enumerate(PORTALES_DISPONIBLES):
+    estado = estado_actual.get(portal, "desconocido")
+    if estado == "ok":
+        color = "#27ae60"
+        texto = "Conectado"
+    elif estado == "fallo":
+        color = "#c0392b"
+        texto = "Bloqueado"
+    else:
+        color = "#bdc3c7"
+        texto = "Sin probar"
+    with cols_estado[i]:
+        st.markdown(
+            f"<div style='text-align:center;padding:10px;border-radius:6px;"
+            f"background:{color};color:#fff;font-weight:600;font-size:13px;'>"
+            f"{portal}<br>{texto}</div>",
+            unsafe_allow_html=True,
+        )
 
 # ---------------------------------------------------------------------------
 # Configuración en el cuerpo principal (sin sidebar)
 # ---------------------------------------------------------------------------
 
+st.markdown("---")
 st.subheader("Configuración de búsqueda")
 
 col_portales, col_barrios, col_paginas = st.columns([0.34, 0.36, 0.30])
@@ -77,7 +134,9 @@ with col_portales:
     portales_sel = st.multiselect(
         "Portales",
         options=PORTALES_DISPONIBLES,
-        default=portales_por_defecto,
+        default=[] if modo_demo else portales_por_defecto,
+        disabled=modo_demo,
+        help="En modo demo no se usan portales reales.",
     )
 
 with col_barrios:
@@ -93,6 +152,7 @@ with col_paginas:
         min_value=1,
         max_value=20,
         value=int(portales_cfg.get("zonaprop", {}).get("max_paginas", 2)),
+        disabled=modo_demo,
     )
 
 st.markdown("---")
@@ -126,8 +186,9 @@ with col4:
     limpiar = st.button("🗑️ Limpiar resultados", use_container_width=True)
 
 if limpiar:
-    for clave in ("resultado", "pagina_actual"):
+    for clave in ("resultado", "pagina_actual", "portal_estado"):
         st.session_state.pop(clave, None)
+    st.session_state["portal_estado"] = {p: "desconocido" for p in PORTALES_DISPONIBLES}
     st.rerun()
 
 # ---------------------------------------------------------------------------
@@ -135,11 +196,43 @@ if limpiar:
 # ---------------------------------------------------------------------------
 
 if buscar:
-    if not portales_sel:
-        st.error("Seleccioná al menos un portal.")
-    elif not barrios_sel:
-        st.error("Seleccioná al menos un barrio.")
+    if modo_demo:
+        criterios = Criterios(
+            tipos=["casa", "PH", "departamento"],
+            ambientes_min=int(ambientes_min),
+            metros_min=float(metros_min),
+            precio_max_usd=float(precio_max_usd),
+            requiere_balcon_o_patio=requiere_balcon,
+            excluir_escalera=excluir_escalera,
+            requiere_apto_credito=requiere_apto_credito,
+            excluir_departamento_nuevo=excluir_nuevo,
+            excluir_departamento_pozo=excluir_pozo,
+            moneda_objetivo="USD",
+            tipo_cambio_ars_usd=float(tipo_cambio),
+        )
+        motor = MotorBusqueda()
+        try:
+            resultado = motor.buscar(
+                criterios=criterios,
+                portales=[],
+                barrios=[],
+                max_paginas=1,
+                modo_demo=True,
+            )
+        except Exception as exc:
+            logger.exception("Error en búsqueda demo: %s", exc)
+            st.error(f"Error durante la búsqueda: {exc}")
+            resultado = None
+        # En demo no hay portales fallados
+        st.session_state["portal_estado"] = {p: "no_usado" for p in PORTALES_DISPONIBLES}
     else:
+        if not portales_sel:
+            st.error("Seleccioná al menos un portal.")
+            st.stop()
+        if not barrios_sel:
+            st.error("Seleccioná al menos un barrio.")
+            st.stop()
+
         criterios = Criterios(
             tipos=["casa", "PH", "departamento"],
             ambientes_min=int(ambientes_min),
@@ -162,16 +255,25 @@ if buscar:
                 portales=portales_sel,
                 barrios=barrios_sel,
                 max_paginas=int(max_paginas),
-                modo_demo=modo_demo,
+                modo_demo=False,
             )
-        except Exception as exc:  # un portal caído no tumba la UI
-            logger.exception("Error en búsqueda: %s", exc)
+        except Exception as exc:
+            logger.exception("Error en búsqueda real: %s", exc)
             st.error(f"Error durante la búsqueda: {exc}")
             resultado = None
-        if resultado is not None:
-            st.session_state["resultado"] = resultado
-            st.session_state["pagina_actual"] = 1
-            st.session_state["portales_fallidos"] = motor.portales_fallidos
+        # Actualizar estado de portales según fallos detectados
+        fallados = motor.portales_fallidos
+        for p in PORTALES_DISPONIBLES:
+            if p in fallados:
+                st.session_state["portal_estado"][p] = "fallo"
+            elif p in portales_sel:
+                st.session_state["portal_estado"][p] = "ok"
+            else:
+                st.session_state["portal_estado"][p] = "no_usado"
+
+    if resultado is not None:
+        st.session_state["resultado"] = resultado
+        st.session_state["pagina_actual"] = 1
 
 # ---------------------------------------------------------------------------
 # Visualización de resultados
@@ -186,13 +288,14 @@ aceptadas = resultado.aceptadas
 excepciones = resultado.excepciones
 todas_validas = aceptadas + excepciones
 
-# Aviso visible cuando portales fallan en modo real (bloqueo externo, no bug de la app)
-portales_fallidos = st.session_state.get("portales_fallidos", [])
-if not modo_demo and portales_fallidos:
+# Aviso de portales fallados (solo modo real)
+portales_fallidos = st.session_state.get("portal_estado", {})
+fallados_lista = [p for p, e in portales_fallidos.items() if e == "fallo"]
+if not modo_demo and fallados_lista:
     st.markdown(
         '<div style="background-color:#c0392b;color:#ffffff;padding:12px;border-radius:6px;margin-bottom:16px;">'
         '<strong>⚠️ Algunos portales fallaron (bloqueo externo):</strong><br>'
-        + ", ".join(portales_fallidos)
+        + ", ".join(fallados_lista)
         + '. Están bloqueando peticiones automáticas (403/405/CAPTCHA). '
         'No es un error de la aplicación: el motor continuó con los portales disponibles.'
         '</div>',
