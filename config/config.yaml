@@ -1,0 +1,114 @@
+# Configuración del buscador de inmuebles (CABA)
+# Todos los valores tienen los defaults establecidos en el requerimiento.
+
+busqueda:
+  tipos: ["casa", "PH", "departamento"]
+  ambientes_min: 3
+  metros_min: 50
+  precio_max_usd: 120000
+  requiere_balcon_o_patio: true
+  excluir_escalera: true
+  requiere_apto_credito: false
+  excluir_departamento_nuevo: true
+  excluir_departamento_pozo: true
+  moneda_objetivo: "USD"
+  tipo_cambio_ars_usd: 1300
+
+barrios:
+  - nombre: "Flores"
+    slugs:
+      zonaprop: "flores"
+      mercadolibre: "flores"
+      argenprop: "flores"
+  - nombre: "Floresta"
+    slugs:
+      zonaprop: "floresta"
+      mercadolibre: "floresta"
+      argenprop: "floresta"
+  - nombre: "Villa del Parque"
+    slugs:
+      zonaprop: "villa-del-parque"
+      mercadolibre: "villa-del-parque"
+      argenprop: "villa-del-parque"
+  - nombre: "Santa Rita"
+    slugs:
+      zonaprop: "santa-rita"
+      mercadolibre: "santa-rita"
+      argenprop: "santa-rita"
+  - nombre: "Paternal"
+    slugs:
+      zonaprop: "paternal"
+      mercadolibre: "paternal"
+      argenprop: "paternal"
+  - nombre: "Devoto"
+    slugs:
+      zonaprop: "devoto"
+      mercadolibre: "devoto"
+      argenprop: "devoto"
+  - nombre: "Villa Pueyrredon"
+    slugs:
+      zonaprop: "villa-pueyrredon"
+      mercadolibre: "villa-pueyrredon"
+      argenprop: "villa-pueyrredon"
+  - nombre: "Villa Urquiza"
+    slugs:
+      zonaprop: "villa-urquiza"
+      mercadolibre: "villa-urquiza"
+      argenprop: "villa-urquiza"
+  - nombre: "Villa Crespo"
+    slugs:
+      zonaprop: "villa-crespo"
+      mercadolibre: "villa-crespo"
+      argenprop: "villa-crespo"
+  - nombre: "Almagro"
+    slugs:
+      zonaprop: "almagro"
+      mercadolibre: "almagro"
+      argenprop: "almagro"
+  - nombre: "Parque Centenario"
+    slugs:
+      zonaprop: "parque-centenario"
+      mercadolibre: "parque-centenario"
+      argenprop: "parque-centenario"
+  - nombre: "Caballito"
+    slugs:
+      zonaprop: "caballito"
+      mercadolibre: "caballito"
+      argenprop: "caballito"
+  - nombre: "Coghlan"
+    slugs:
+      zonaprop: "coghlan"
+      mercadolibre: "coghlan"
+      argenprop: "coghlan"
+  - nombre: "Monte Castro"
+    slugs:
+      zonaprop: "monte-castro"
+      mercadolibre: "monte-castro"
+      argenprop: "monte-castro"
+
+portales:
+  zonaprop:
+    habilitado: true
+    max_paginas: 2
+    pausa_min: 1
+    pausa_max: 2
+    reintentos: 3
+    timeout: 30
+  mercadolibre:
+    habilitado: true
+    max_paginas: 2
+    pausa_min: 1
+    pausa_max: 2
+    reintentos: 3
+    timeout: 30
+  argenprop:
+    habilitado: true
+    max_paginas: 2
+    pausa_min: 1
+    pausa_max: 2
+    reintentos: 3
+    timeout: 30
+
+salida:
+  formatos: [csv, json, excel]
+  carpeta: "data"

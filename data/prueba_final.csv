@@ -1,0 +1,4 @@
+portal,barrio,tipo,ambientes,metros2,precio_usd,moneda_original,precio_original,direccion,tiene_balcon,tiene_patio,escalera_sin_ascensor,apto_credito,es_excepcion,imagen_url,url,fecha_publicacion,descripcion
+demo,Caballito,departamento,3,60.0,100000.0,USD,100.000,Rivadavia 6000,True,False,False,False,False,,https://demo.inmoscrapper.com/1,2026-01-10,Luminoso departamento con balcón al frente
+demo,Floresta,PH,4,80.0,110000.0,USD,110.000,Av. Ramón Falcón 3000,False,True,False,False,False,,https://demo.inmoscrapper.com/2,2026-01-11,PH con patio propio y parrilla
+demo,Caballito,departamento,3,60.0,100000.0,USD,100.000,Rivadavia 6100,True,False,True,False,True,,https://demo.inmoscrapper.com/5,2026-01-14,"Departamento con balcón, acceso por escalera, sin ascensor"

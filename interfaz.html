@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buscador de Inmuebles — CABA</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; background: #f7f9fc; color: #262730; }
+  .banner { background: #c0392b; color: #fff; padding: 12px 20px; border-radius: 6px; margin-bottom: 16px; font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 10px; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+  h1 { font-size: 32px; margin: 0 0 4px 0; }
+  .sub { color: #666; font-size: 14px; margin-bottom: 24px; }
+  .section { background: #fff; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.06); border: 1px solid #e9ecef; }
+  h2 { font-size: 18px; margin-top: 0; margin-bottom: 16px; color: #262730; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  label { display: block; font-size: 12px; font-weight: 600; color: #666; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.4px; }
+  select, input[type="number"], input[type="text"] { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; background: #fff; }
+  input[type="checkbox"] { margin-right: 8px; }
+  .checkbox-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 14px; }
+  .btn-primary { background: #ff4b4b; color: #fff; border: none; padding: 10px 24px; border-radius: 6px; font-size: 15px; font-weight: 600; cursor: pointer; width: 100%; }
+  .btn-primary:hover { background: #e43e3e; }
+  .btn-secondary { background: #f0f2f6; color: #262730; border: 1px solid #d1d5db; padding: 8px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+  .btn-secondary:hover { background: #e2e6ea; }
+  .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .metrics { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 16px; }
+  .metric { background: #fff; border: 1px solid #e9ecef; border-radius: 8px; padding: 14px 12px; text-align: center; }
+  .metric .val { font-size: 22px; font-weight: 700; color: #ff4b4b; }
+  .metric .lbl { font-size: 12px; color: #666; margin-top: 4px; }
+  .filters { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .filters input, .filters select { flex: 1; min-width: 150px; }
+  .pag { display: flex; align-items: center; justify-content: space-between; margin: 16px 0; padding: 8px 0; }
+  .page-info { font-size: 13px; color: #666; }
+  .card { background: #fff; border: 1px solid #e9ecef; border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; display: grid; grid-template-columns: 150px 1fr 220px; gap: 16px; align-items: start; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+  .thumb { width: 150px; height: 100px; border-radius: 6px; object-fit: cover; background: #eee; }
+  .thumb-nophoto { width: 150px; height: 100px; border-radius: 6px; background: #eee; display: flex; align-items: center; justify-content: center; color: #999; font-size: 12px; border: 1px dashed #ccc; }
+  .precio { font-size: 24px; font-weight: 700; color: #ff4b4b; line-height: 1.2; }
+  .precio.sin { color: #999; font-weight: 400; font-size: 14px; }
+  .meta { color: #666; font-size: 13px; line-height: 1.6; }
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .tag { padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; color: #fff; white-space: nowrap; }
+  .tag.balcon { background: #27ae60; }
+  .tag.patio { background: #16a085; }
+  .tag.escalera { background: #c0392b; }
+  .tag.apto { background: #8e44ad; }
+  .tag.excepcion { background: #e74c3c; font-weight: 800; }
+  .direccion { color: #666; font-size: 12px; margin-top: 4px; }
+  .link-btn { display: inline-block; background: #f0f2f6; color: #ff4b4b; text-decoration: none; padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; border: 1px solid #d1d5db; text-align: center; width: 100%; }
+  .link-btn:hover { background: #e2e6ea; }
+  .export { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  .export-btn { flex: 1; min-width: 120px; background: #fff; border: 1px solid #d1d5db; color: #262730; padding: 10px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; text-align: left; }
+  .export-btn:hover { background: #f0f2f6; border-color: #bbb; }
+  .resumen { color: #666; font-size: 13px; margin-bottom: 12px; }
+  .empty { text-align: center; padding: 40px; color: #888; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="banner">&#9888; MODO DEMO ACTIVADO — Se usa el dataset sintético fijo (7 propiedades). No se realiza ninguna petición a internet.</div>
+
+  <h1>🏠 Buscador de Inmuebles — CABA</h1>
+  <div class="sub">Barrios objetivo: Flores, Floresta, Villa del Parque, Santa Rita, Paternal, Devoto, Villa Pueyrredon, Villa Urquiza, Villa Crespo, Almagro, Parque Centenario, Caballito, Coghlan, Monte Castro.</div>
+
+  <div class="section">
+    <h2>Configuración de búsqueda</h2>
+    <div class="grid-3">
+      <div>
+        <label>Portales</label>
+        <select multiple size="4">
+          <option selected>ZonaProp</option>
+          <option selected>MercadoLibre</option>
+          <option selected>Argenprop</option>
+        </select>
+      </div>
+      <div>
+        <label>Barrios</label>
+        <select multiple size="4">
+          <option selected>Caballito</option>
+          <option selected>Floresta</option>
+          <option>Flores</option>
+          <option>Villa del Parque</option>
+          <option>Santa Rita</option>
+          <option>Paternal</option>
+          <option>Devoto</option>
+          <option>Villa Pueyrredon</option>
+          <option>Villa Urquiza</option>
+          <option>Villa Crespo</option>
+          <option>Almagro</option>
+          <option>Parque Centenario</option>
+          <option>Coghlan</option>
+          <option>Monte Castro</option>
+        </select>
+      </div>
+      <div>
+        <label>Máx. páginas por portal</label>
+        <input type="number" value="2" min="1" max="20">
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-top: 16px;">
+      <div>
+        <div class="checkbox-row"><input type="checkbox" checked id="cb1"><label for="cb1">Ambientes mínimos: 3</label></div>
+        <div class="checkbox-row"><input type="checkbox" checked id="cb2"><label for="cb2">Superficie mínima: 50 m²</label></div>
+        <div class="checkbox-row"><input type="checkbox" checked id="cb3"><label for="cb3">Precio máximo: USD 120.000</label></div>
+        <div class="checkbox-row"><input type="checkbox" checked id="cb4"><label for="cb4">Requiere balcón/terraza/patio</label></div>
+        <div class="checkbox-row"><input type="checkbox" checked id="cb5"><label for="cb5">Excluir sin ascensor (por escalera)</label></div>
+      </div>
+      <div>
+        <div class="checkbox-row"><input type="checkbox" id="cb6"><label for="cb6">Requiere apto crédito</label></div>
+        <div class="checkbox-row"><input type="checkbox" checked id="cb7"><label for="cb7">Excluir departamento nuevo (a estrenar)</label></div>
+        <div class="checkbox-row"><input type="checkbox" checked id="cb8"><label for="cb8">Excluir departamento de pozo</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="cb9"><label for="cb9">Tipo de cambio ARS→USD: 1300</label></div>
+      </div>
+    </div>
+    <button class="btn-primary" style="margin-top: 18px;">🔍 Buscar</button>
+  </div>
+
+  <div class="section">
+    <h2>Resultados</h2>
+    <div class="metrics">
+      <div class="metric"><div class="val">3</div><div class="lbl">Total válidas</div></div>
+      <div class="metric"><div class="val">USD 103.333</div><div class="lbl">Precio promedio</div></div>
+      <div class="metric"><div class="val">USD 100.000</div><div class="lbl">Precio mínimo</div></div>
+      <div class="metric"><div class="val">USD 110.000</div><div class="lbl">Precio máximo</div></div>
+      <div class="metric"><div class="val">66,7 m²</div><div class="lbl">Superficie promedio</div></div>
+    </div>
+    <div class="resumen">Revisadas: 7 | Aceptadas: 2 | Excepciones (escalera/sin ascensor): 1 | Rechazadas: 4</div>
+
+    <div class="filters">
+      <input type="text" placeholder="Texto libre (descripción / dirección)">
+      <select><option>Barrio</option><option>Caballito</option><option>Floresta</option></select>
+      <select><option>Tipo</option><option>Departamento</option><option>PH</option></select>
+    </div>
+
+    <div class="pag">
+      <button class="btn-secondary" disabled>⬅️ Anterior</button>
+      <div class="page-info">Página 1 de 1 (3 propiedades)</div>
+      <button class="btn-secondary" disabled>Siguiente ➡️</button>
+    </div>
+
+    <div class="card">
+      <img src="https://images.unsplash.com/photo-1502672260266-1c1ef1d78c3f?w=400&h=300&fit=crop" alt="foto" class="thumb">
+      <div>
+        <div class="precio">USD 100.000</div>
+        <div class="meta">Departamento · Caballito · 3 amb · 60 m²</div>
+        <div class="direccion">📍 Rivadavia 6000</div>
+        <div class="tags">
+          <span class="tag balcon">Balcón</span>
+        </div>
+      </div>
+      <a href="https://demo.inmoscrapper.com/1" class="link-btn">Ver aviso</a>
+    </div>
+
+    <div class="card">
+      <img src="https://images.unsplash.com/photo-1494527214725-c35e99d4611f?w=400&h=300&fit=crop" alt="foto" class="thumb">
+      <div>
+        <div class="precio">USD 110.000</div>
+        <div class="meta">PH · Floresta · 4 amb · 80 m²</div>
+        <div class="direccion">📍 Av. Ramón Falcón 3000</div>
+        <div class="tags">
+          <span class="tag patio">Patio</span>
+        </div>
+      </div>
+      <a href="https://demo.inmoscrapper.com/2" class="link-btn">Ver aviso</a>
+    </div>
+
+    <div class="card">
+      <div class="thumb-nophoto">Sin imagen</div>
+      <div>
+        <div class="precio">USD 100.000</div>
+        <div class="meta">Departamento · Caballito · 3 amb · 60 m²</div>
+        <div class="direccion">📍 Rivadavia 6100</div>
+        <div class="tags">
+          <span class="tag balcon">Balcón</span>
+          <span class="tag escalera">Escalera</span>
+          <span class="tag excepcion">Excepción</span>
+        </div>
+      </div>
+      <a href="https://demo.inmoscrapper.com/5" class="link-btn">Ver aviso</a>
+    </div>
+
+    <div class="export">
+      <button class="export-btn">⬇️ CSV</button>
+      <button class="export-btn">⬇️ JSON</button>
+      <button class="export-btn">⬇️ Excel</button>
+    </div>
+  </div>
+
+  <p style="color:#999;font-size:12px;text-align:center;margin-top:24px;">Interfaz generada desde la especificación del buscador de inmuebles CABA — modo demo.</p>
+</div>
+</body>
+</html>
