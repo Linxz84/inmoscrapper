@@ -40,6 +40,8 @@ class ZonaPropScraper(BaseScraper):
 
     def _url_para_barrio_pagina(self, barrio: str, pagina: int) -> str:
         slug = self.slugs.get(barrio, barrio.lower().replace(" ", "-"))
+        if pagina > 1:
+            return f"{URL_BASE}/{slug}-departamentos-venta-pagina-{pagina}.html"
         return URL_PATTERN.format(base=URL_BASE, slug=slug)
 
     def buscar(self, barrio: str, pagina: int) -> list[Propiedad]:

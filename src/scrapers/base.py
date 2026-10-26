@@ -26,6 +26,15 @@ USER_AGENT = (
     "Chrome/120.0.0.0 Safari/537.36"
 )
 
+HEADERS_NAVEGADOR = {
+    "User-Agent": USER_AGENT,
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "Accept-Language": "es-AR,es;q=0.9,en;q=0.8",
+    "Referer": "https://www.google.com/",
+    "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
+}
+
 
 class BaseScraper:
     """Clase base con utilidades HTTP compartidas por todos los scrapers."""
@@ -33,7 +42,7 @@ class BaseScraper:
     def __init__(self, nombre_portal: str):
         self.nombre_portal = nombre_portal
         self.session = requests.Session()
-        self.session.headers.update({"User-Agent": USER_AGENT})
+        self.session.headers.update(HEADERS_NAVEGADOR)
 
     def _obtener_html(self, url: str) -> Optional[str]:
         """Realiza una petición GET con reintentos, backoff y pausa aleatoria.
