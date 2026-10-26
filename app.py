@@ -171,6 +171,7 @@ if buscar:
         if resultado is not None:
             st.session_state["resultado"] = resultado
             st.session_state["pagina_actual"] = 1
+            st.session_state["portales_fallidos"] = motor.portales_fallidos
 
 # ---------------------------------------------------------------------------
 # Visualización de resultados
@@ -184,6 +185,19 @@ if resultado is None:
 aceptadas = resultado.aceptadas
 excepciones = resultado.excepciones
 todas_validas = aceptadas + excepciones
+
+# Aviso visible cuando portales fallan en modo real (bloqueo externo, no bug de la app)
+portales_fallidos = st.session_state.get("portales_fallidos", [])
+if not modo_demo and portales_fallidos:
+    st.markdown(
+        '<div style="background-color:#c0392b;color:#ffffff;padding:12px;border-radius:6px;margin-bottom:16px;">'
+        '<strong>⚠️ Algunos portales fallaron (bloqueo externo):</strong><br>'
+        + ", ".join(portales_fallidos)
+        + '. Están bloqueando peticiones automáticas (403/405/CAPTCHA). '
+        'No es un error de la aplicación: el motor continuó con los portales disponibles.'
+        '</div>',
+        unsafe_allow_html=True,
+    )
 
 st.markdown("---")
 st.subheader("Resultados")
